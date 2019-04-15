@@ -6,8 +6,6 @@ info:
     name: WakeCap
     url: https://www.wakecap.com/
   description: |
-    ![DarkSide](https://github.com/wakecap/forum-qa-task/blob/darkside/darkside.png)
-    
     ## Description
       You are requested to create a simple Q/A Forum backend where a user would be able to publish a new question, and in-turn other users on the platform would be able to answer the question as well as up/down vote questions. Each question is ranked based on the amount of interaction that takes place with the question based on the metrics(upvotes, downvotes, answers).
 
