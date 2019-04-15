@@ -1,0 +1,351 @@
+swagger: '2.0'
+info:
+  version: 2019.16.4
+  title: Q/A Forum Backend Problem Statement
+  contact:
+    name: WakeCap
+    url: https://www.wakecap.com/
+  description: |
+    ## Description
+      You are requested to create a simple Q/A Forum backend where a user would be able to publish a new question, and in-turn other users on the platform would be able to answer the question as well as up/down vote questions. Each question is ranked based on the amount of interaction that takes place with the question based on the metrics(upvotes, downvotes, answers).
+
+    ## Functional Requirements
+    ### Authentication
+      Simple authentication will be done by passing username and password to the login endpoint as listed below. Authentication returns a simple ID to be used for further calls. it can be as simple as a UUID, don't overcomplicate this process. _This is not a best practice in terms of security, it is only acceptable for the purposes of this exercise, it is meant to simplify this task_
+      
+    ### Up/Down Voting
+      Only answers can be up/down voted by any logged in user. Each answer would have a final **VoteScore** which is `{UpVotes} - {DownVotes}`. 
+      An Answer is considered to be _UpVoted_ if the number of up votes is higher than down votes i.e VoteScore > 0 and vice versa.
+      
+    ## Development Requirements
+    ### Technical Requirements
+    * The backend should be entirely developed in NodeJs. You are free to use any libraries/frameworks that would make developed easier or faster.
+    * Code is expected to be clean and readable with relevant variable and module names
+    * File/Folder Structure is expeccted to be well organized and file names relevant to content
+    * **The final exposed API should follow the details outlined in this spec**
+    * Please read the description of each endpoint because it might contain endpoint specific requirements.
+    
+    ### Data Persistence Requirements
+    * You are free to use any means to persist data. It is acceptable if data is lost on server restart
+    ### Deployment Requirements
+    * The entire backend should be wrapped in a Docker Container that we can load and run to interact with your delivered backend through the mapped port
+    * Docker-Compose is also accepted if you would like to use an external service in its own container.
+    ### Testing requirements
+    * The backend functions are expected to be covered by unit tests. At leat one unit test per method is expected. You are free to add as many unit tests as you believe is satisfactory/
+    * Tests that use the exposed end points can replace method unit tests and in that case, each endpoint should have at least one test.
+    * All tests should be passing upon deliver
+    
+    ## Expected Deliverables
+    * Entire code (including DockerFile) should be delivered in a git repo.
+    * The final git repo could be either pushed to any free git hosting service (providing us with link) or submitted as a zip file
+    * **REMEMBER** : We won't run your backend using a node runner, we'll use the docker image to run it.
+    * Repo should contain a **README.md** file that explains how code is broken down, any comments about the implementaiton and use and any deployment steps you wish to highlight.
+    * There is no restriction on how many commits/branches are included on the repo. However, we will highly appreciate the proper use of source control with relevant commits and commit messages.
+    * You don't have any experience with using git you can just do the following in your final folder:
+      * `git init`
+      * `git add -A`
+      * `git commit -m "final delivery"` 
+      This should have your folder wrapped in a **git repository**. Feel free to push that to a repo hosting service (e.g GitHub or GitLab), or zip the entire folder and send it over.
+      * Please deliver the backend with **at least 5 users** set up and provide the list of users and passwords in a text file in the same delivery folder.
+    
+    ## Optional Requirements
+    The below are optional requirements which will positively impact your assessment if implement but won't have any negative impact if skipped
+    ### Delete Endpoints
+    Implementing DELETE endpoints as outlined below is optional.
+    ### Question Rank
+      Listing questions (GET /questions) returns results ordered descendingly by **QuestionRank** following:
+      `QuestionRank =  {MaxUpVotes} * {AnswersCount} - {CountOfDownVotedAnswers}`
+      
+      _Where_:
+       * `MaxUpVotes` is the total number of upvotes on the most upvoted answer
+       *  `AnswersCount` is the total count of answers for that specific question (up or down voted)
+       *  `CountOfDownVotedAnswers` is the count of answers with VoteScore < 0
+       
+    ## Assesement Criteria
+    * A git repository is delivered
+    * Source control practices used
+    * The docker image is created and run sucessfully
+    * Backend is functional on the exposed
+    * All endpoints behave as outlined in the spec
+    * All unit tests pass
+    * Code Quality and organization
+    * Optional Requirements delivered. (only gives advantage)
+    
+paths:
+  /login:
+    get:
+      tags:
+        - "Endpoints"
+      summary: "The login endpoint"
+      description: "Receives username and password as URL parameters. THIS IS NOT A SAFE WAY T TO DO IT, we're just trying to make your life easier"
+      parameters:
+      - name: "username"
+        in: "query"
+        description: "Username to be logged in"
+        required: true
+        type: "string"
+      - name: "password"
+        in: "query"
+        description: "Password associated with username"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Successful Login"
+          schema:
+            $ref: '#/definitions/LoginResponse'
+        401:
+          description: "Invalid username/password"
+  
+  /questions:
+    get:
+      tags:
+        - "Endpoints"
+      summary: "Get all questions and their answers"
+      description: "Returns an array of all questions"
+      responses:
+        200:
+          description: "OK, body contains questions"
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Question'
+        401:
+          description: "Invalid token"
+    post:
+      tags:
+        - "Endpoints"
+      summary: "Add a new question"
+      description: "A user is can add a new question using their logged in token. Question should point to author for later reference. Author is inferred from supplied token"
+      parameters:
+        - name: "token"
+          in: "query"
+          description: "Authorization token received from login"
+          required: true
+          type: "string"
+        - name: "newQuestion"
+          in: "body"
+          schema:
+            $ref: '#/definitions/NewQuestion'
+      responses:
+        200:
+          description: "OK"
+        401:
+          description: "Invalid token"
+    
+  /questions/{questionId}:
+    get:
+      tags: 
+        - "Endpoints"
+      summary: "Get a question"
+      description: "Gets a specfied question if token is valid"
+      parameters:
+        - name: "questionId"
+          in: "path"
+          description: "The id of the question to be deleted"
+          required: true
+          type: "string"
+        - name: "token"
+          in: "query"
+          description: "Authorization token received from login"
+          required: true
+          type: "string"
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/Question'
+        401:
+          description: "Invalid token"
+    delete:
+      tags:
+        - "Endpoints"
+      summary: "Delete a question"
+      description: "Deletes the specified question if token is valid. ONLY original author can delete a question"
+      parameters:
+        - name: "questionId"
+          in: "path"
+          description: "The id of the question to be deleted"
+          required: true
+          type: "string"
+        - name: "token"
+          in: "query"
+          description: "Authorization token received from login"
+          required: true
+          type: "string"
+      responses:
+        200:
+          description: OK
+        401:
+          description: "Invalid token"
+  
+  /questions/{questionId}/answers:
+    post:
+      tags:
+        - "Endpoints"
+      summary: "Add an answer to question"
+      description: "A user is can add a new answer to a question only once. Answer should point to author for later reference. Author is inferred from supplied token"
+      parameters:
+        - name: "questionId"
+          in: "path"
+          description: "The id of the question to be deleted"
+          required: true
+          type: "string"
+        - name: "token"
+          in: "query"
+          description: "Authorization token received from login"
+          required: true
+          type: "string"
+        - name: "answer"
+          in: "body"
+          schema:
+            $ref: '#/definitions/NewAnswer'
+      responses:
+        200:
+          description: "OK"
+        401:
+          description: "Invalid token"
+  
+  /questions/{questionId}/answers/{answerId}:
+    delete:
+      tags:
+        - "Endpoints"
+      summary: "Delete an answer"
+      description: "Deletes the specified answer if token is valid. ONLY original author can delete an answer.  Author is inferred from supplied token"
+      parameters:
+        - name: "questionId"
+          in: "path"
+          description: "The id of the question"
+          required: true
+          type: "string"
+        - name: "answerId"
+          in: "path"
+          description: "The id of the answer to be deleted"
+          required: true
+          type: "string"
+        - name: "token"
+          in: "query"
+          description: "Authorization token received from login"
+          required: true
+          type: "string"
+      responses:
+        200:
+          description: OK
+        401:
+          description: "Invalid token" 
+    
+  /questions/{questionId}/answers/{answerId}/votes:
+    put:
+      tags:
+        - "Endpoints"
+      summary: "Up/Down/Un-Vote an answer"
+      description: "A user is can only have either an upvote or an unvote on a question. If a user triggers 2 opposing votes, the latter over-writes the first. An unvote is only possible by vote author and would delete the vote. Author is inferred from supplied token"
+      parameters:
+        - name: "questionId"
+          in: "path"
+          description: "The id of the question"
+          required: true
+          type: "string"
+        - name: "answerId"
+          in: "path"
+          description: "The id of the answer to be deleted"
+          required: true
+          type: "string"
+        - name: "token"
+          in: "query"
+          description: "Authorization token received from login"
+          required: true
+          type: "string"
+        - name: "vote"
+          in: "body"
+          schema:
+            $ref: '#/definitions/Vote'
+      responses:
+        200:
+          description: "OK"
+        401:
+          description: "Invalid token"
+
+definitions:
+  LoginResponse:
+    type: "object"
+    properties:
+      username:
+        type: "string"
+        example: "jondoe"
+      token:
+        type: "string"
+        example: "1c6e2690-4115-4ee7-a183-afdbab7a56bd"
+  Question:
+    type: "object"
+    properties:
+      author:
+        type: string
+        example: "jondoe"
+        description: "Username of question author"
+      timestamp:
+        type: string
+        format: date-time
+        example: "2019-04-01T17:32:28Z"  
+      question:
+        type: "string"
+        example: "What is a swagger spec?"
+      details:
+        type: "string"
+        example: "I'm received this swagger spec and I don't know what it is. PLEASE HELP"
+      questionRank:
+        type: integer
+        description: "QuestionRank if implemented"
+        example: 213423
+      answers:
+        type: array
+        items:
+          $ref: '#/definitions/Answer'
+      
+    
+  Answer:
+    type: "object"
+    properties:
+      answer:
+        type : "string"
+        example: "WakeCap is an awesome company" 
+      votes:
+        type: integer
+        example: 9999
+      author:
+        type: string
+        description: "Username of answer author"
+        example: "jondoe"
+      timestamp:
+        type: string
+        format: date-time
+        example: "2019-04-01T17:32:28Z"
+  
+  NewQuestion:
+    type: "object"
+    properties:
+      question:
+        type: "string"
+        example: "What is a swagger spec?"
+      details:
+        type: "string"
+        example: "I'm received this swagger spec and I don't know what it is. PLEASE HELP"
+        
+  NewAnswer:
+    type: "object"
+    properties:
+      answer:
+        type: "string"
+        example: "I have the wisdom to answer"
+        
+  Vote:
+    type: "object"
+    properties:
+      type:
+        type: string
+        description: "Vote type"
+        enum:
+          - "unvote"
+          - "up"
+          - "down"
+        
